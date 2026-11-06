@@ -1,0 +1,15 @@
+diff --git a/src/compositors/sway/sway_runtime.cpp b/src/compositors/sway/sway_runtime.cpp
+index 0f2a2863b..f31471da0 100644
+--- a/src/compositors/sway/sway_runtime.cpp
++++ b/src/compositors/sway/sway_runtime.cpp
+@@ -59,7 +59,9 @@ namespace compositors::sway {
+   }
+ 
+   void SwayRuntime::resolveCommands() const {
+-    if (process::commandExists("swaymsg")) {
++    if (process::commandExists("scrollmsg")) {
++      m_msgCommand = "scrollmsg";
++    } else if (process::commandExists("swaymsg")) {
+       m_msgCommand = "swaymsg";
+     } else if (process::commandExists("i3-msg")) {
+       m_msgCommand = "i3-msg";

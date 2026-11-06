@@ -1,0 +1,78 @@
+diff --git a/src/system/hardware_info.cpp b/src/system/hardware_info.cpp
+index 847bbbb29..1fa51d088 100644
+--- a/src/system/hardware_info.cpp
++++ b/src/system/hardware_info.cpp
+@@ -23,22 +23,67 @@
+ 
+ namespace {
+ 
++  // /proc/cpuinfo keys are architecture-specific:
++  //   x86:            "model name : Intel(R) Core(TM) ..."
++  //   LoongArch:      "Model Name : Loongson-3A5000"   (capital M/N)
++  //   MIPS/Loongson:  "cpu model  : Loongson-3A5000 ..."
++  //   ARM:            "Hardware   : BCM2711" / "Processor : ARMv8 ..."
++  // Normalize the key (lowercase, drop separators) so one lookup works on all
++  // of them, and prefer the most specific field available.
++  int cpuInfoKeyRank(std::string_view key) {
++    std::string normalized;
++    normalized.reserve(key.size());
++    for (const char ch : key) {
++      const auto uc = static_cast<unsigned char>(ch);
++      if (std::isalnum(uc) != 0) {
++        normalized.push_back(static_cast<char>(std::tolower(uc)));
++      }
++    }
++    if (normalized == "modelname") return 0;
++    if (normalized == "cpumodel") return 1;
++    if (normalized == "hardware") return 2;
++    if (normalized == "processor") return 3;
++    return -1;
++  }
++
++  bool isPureNumber(std::string_view value) {
++    return std::ranges::all_of(value, [](const char ch) {
++      const auto uc = static_cast<unsigned char>(ch);
++      return std::isdigit(uc) != 0 || std::isspace(uc) != 0;
++    });
++  }
++
+   std::string readCpuModel() {
++    constexpr int kNoMatch = 4;
+     std::ifstream file{"/proc/cpuinfo"};
+     if (!file.is_open()) {
+       return i18n::tr("system.hardware.unknown-cpu");
+     }
+ 
++    std::string best;
++    int bestRank = kNoMatch;
+     std::string line;
+     while (std::getline(file, line)) {
+-      if (line.starts_with("model name")) {
+-        const auto colonPos = line.find(':');
+-        if (colonPos != std::string::npos) {
+-          return StringUtils::trim(line.substr(colonPos + 1));
+-        }
++      const auto colonPos = line.find(':');
++      if (colonPos == std::string::npos) {
++        continue;
++      }
++      const int rank = cpuInfoKeyRank(std::string_view(line).substr(0, colonPos));
++      if (rank < 0 || rank >= bestRank) {
++        continue;
++      }
++      std::string value = StringUtils::trim(std::string_view(line).substr(colonPos + 1));
++      // x86 "processor : 0" is an index, not a model name.
++      if (value.empty() || isPureNumber(value)) {
++        continue;
++      }
++      best = std::move(value);
++      bestRank = rank;
++      if (bestRank == 0) {
++        break;
+       }
+     }
+-    return i18n::tr("system.hardware.unknown-cpu");
++    return best.empty() ? i18n::tr("system.hardware.unknown-cpu") : best;
+   }
+ 
+   std::string_view shortVendorPrefix(const std::string& vendorName) {

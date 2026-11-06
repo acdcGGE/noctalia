@@ -1,0 +1,30 @@
+# ~/.config/scroll/config 片段
+# 顺序很重要：fcitx5 必须在 noctalia 与任何 GUI 应用之前启动。
+# 完整说明见 scroll-loong64 文档 §6 与 §5：
+# https://github.com/acdcGGE/scroll-loong64/blob/loong64/loong64/docs/scroll-build.md
+# （本仓库 docs/scroll-build.md 只是指向该文档的指针页）
+
+# ---- 输入法（fcitx5）----
+exec --no-startup-id fcitx5 -d
+
+# 若 ~/.profile 的环境变量未被 LightDM 会话继承，在此强制注入：
+exec export GTK_IM_MODULE=fcitx
+exec export QT_IM_MODULE=fcitx
+exec export XMODIFIERS=@im=fcitx
+exec export SDL_IM_MODULE=fcitx
+
+# dbus 会话总线兜底（fcitx 组件需要，LightDM 会话一般已有）
+exec dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
+
+# ---- 桌面 shell ----
+exec --no-startup-id noctalia --daemon
+
+# ---- 全局快捷键（$mod 默认 Win/Mod4）----
+bindsym $mod+space   exec "noctalia msg panel-toggle launcher"
+bindsym $mod+c       exec "noctalia msg panel-toggle control-center"
+bindsym $mod+l       exec "noctalia msg session lock"
+bindsym $mod+comma   exec "noctalia msg settings-open"
+bindsym Print        exec "noctalia msg screenshot-fullscreen"
+bindsym $mod+Shift+s exec "noctalia msg screenshot-region"
+bindsym $mod+Shift+w exec "noctalia msg wallpaper-random"
+bindsym $mod+Return  exec wezterm

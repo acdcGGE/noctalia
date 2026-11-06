@@ -1,0 +1,10 @@
+# ~/.profile 环境变量片段（fcitx5 输入法）
+# 不要写进 ~/.bashrc —— 只对交互 shell 生效，不会传给 GUI 会话。
+# 若 LightDM 未 source ~/.profile，改用 /etc/environment 或
+# scroll-loong64 文档 §6.3 的 config 内 exec export 注入：
+# https://github.com/acdcGGE/scroll-loong64/blob/loong64/loong64/docs/scroll-build.md
+
+export GTK_IM_MODULE=fcitx
+export QT_IM_MODULE=fcitx
+export XMODIFIERS=@im=fcitx
+export SDL_IM_MODULE=fcitx
